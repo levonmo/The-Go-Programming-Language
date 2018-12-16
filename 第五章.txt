@@ -1,0 +1,110 @@
+第五章：函数
+	·当函数存在返回值的时候必须显式地以return语句结束，除非函数明确不会走完整个流程（比如一个for死循环）
+	·函数的类型 
+		称为函数签名，当一个函数拥有相同的形参列表和返回列表时，认为这两个函数的类型或签名是相同的。形参和返回参数的名称不会影响函数的类型
+	·实参是按值传递的，所以函数接收到的是没有实参的副本，修改形参的变量并不会影响到实参的值。
+		但是，如果提供的实参是引用类型，比如 指针，slice，map，函数或者通道，那么形参变量就有可能间接的修改实参变量
+	·有些函数没有函数体，说明不是用go语言实现的，eg
+		package math
+		func Sin(x float64) float64  //使用汇编语言实现
+	·错误
+		·习惯上将错误值作为最后一个结果返回，如果错误只有一个情况，结果通常设置为布尔类型
+		·与其他语言不同，go语言通过使用普通变量的值而非异常来报告错误。尽管go有异常机制，但是go语言的异常是针对bug导致的预料外的错误
+		·go程序使用通常的控制流机制（比如if和return语句）也对错误
+		·错误处理策略：
+			当函数调用返回一个错误时，调用者应该负责检查错误并采取合适的处理应对
+			·首先最常见的是将错误传递下去，在子例程中发生的错误通过返回值返回给主例程，这样在主获得错误并进行判断处理
+		·log.Fatalf("Size is down: %v\n",err) //以这种方式处理错误，它默认会将时间和日期作为前缀添加到错误消息前
+		·当读取文件到结束的位置，io包会返回 EOF 错误
+			package io
+			import "errors"
+			var EOF = errors.New("EOF")
+			eg: 一段读取文件的错误处理 (伪代码)
+				for {
+					r,_,err := in.read()
+					if (err == io.EOF) {
+						break
+					}
+					if err != nil {
+						return fmt.Errorf("read failed: %v",err)
+					}
+				}
+				
+	·函数变量：
+		var f func(int) int
+		func square(n int) int {return n * n}
+		func negative(n int) int {return -n}
+		func product(m,n int) int {return  m * n}
+		func main()  {
+			f := square //f的类型已经确定了
+			fmt.Println(f(3))
+			
+			/**
+			negative 和 square 的函数类型是一致的，所以f可以完成赋值
+			函数的类型 是由形参列表和返回值列表确定的
+			 */
+			f = negative
+			fmt.Println(f(3))
+		
+			//f = product //编译错误: 不能把类型 func(int,int) int 赋值 给 func (int) int
+			//fmt.Println(f(3))
+			
+			g := product
+			fmt.Println(g(2,3))
+		}
+	
+	·不能调用一个空的函数变量
+		var f func(int) int //
+		func main()  {
+			fmt.Println(f(3))
+		}
+	·defer : 正确使用defer是在成功获得资源之后
+		resp,err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close() //确定了成功获取资源之后释放资源
+	
+	·可以使用改方法来测试一个函数的调用时间
+		func main()  {
+			defer f1()() //注意这里是两个括号
+			time.Sleep(time.Second * 5)
+		}
+		func f1() func()  {
+			start := time.Now() //这个不是延迟执行
+			return func() {  //延迟执行的是返回的这个函数
+				fmt.Println(time.Since(start))   //可以计算函数的调用时间
+			}
+		}
+	·延迟函数可以获取和改变返回值
+		func main()  {
+			fmt.Println(double(5))
+		}
+		func double(x int) (result int) {
+			defer func() {
+				fmt.Println(x,result)
+				result += 100 //延迟函数不到函数的最后一刻是不会执行的
+			}()
+			return x + x
+		}
+	·注意延时函数在循环里面的使用
+		for _,filename := range filenames {
+			f, err := os.Open(filename)
+			if err != nil {
+				return err
+			}
+			defer f.Close //这样f.Close根本没有在每次循环的时候关闭，会用尽资源
+		}
+		解决方案是：将for循环放到一个函数里面，这样函数结束就会执行defer
+			for _, filename := range filenames {
+				if err := doFile(filename); err != nil {
+					return err
+				}
+			}
+			func doFile(filename string) error {
+				f,err := os.Open(filename)
+				if err != nil {return err}
+				defer f.Close() //这样每次执行都会调用到f.Close
+			}
+			
+	·后defer的先执行，相当于一个栈
