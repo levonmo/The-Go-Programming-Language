@@ -1,0 +1,61 @@
+第一章:
+	·必须精确导入需要的包，否则出现编译错误
+	·GO不需要在语句或声明的后面加分号，除非有多个语言出现在同一行，换行符会被转化为分号
+	·在doc下使用go fmt + 文件 可以格式化源代码(就是有的你后面加上分号，go fmt会帮你去掉)
+	·在go中，所有的索引都是半开区间，即是包含第一个索引，不包含最后一个索引。比如[m:n]表示第m个元素到第n-1个元素
+	·os.Args可以获取在doc下的参数，os.Args的第一个元素是命令本身的名字，
+		所以你想要获取你输入的参数是 slice[1，len(os.Args)](从第二个元素开始)
+		如果是slice[m,n]中的m或n缺失，即slice[:n]或slice[m:] 这两个表示的范围分别是 slice[0:n]和slice[m:len(os.Args)]
+	·var s,seq string ->变量可以在声明的时候进行初始化，
+		如果变量没有明确的初始化，它将隐式得初始化为这个类型的空值，对于数字初始化为 0 ，字符串初始化为 ""
+	·递增语句 i++ 是对i进行加 1，j = i++是不合法的。并且仅支持后缀 --i是不合法的
+	·for 是 Go里面唯一的循环语句，它有几种表达形式
+	
+		形式1 : for init;condition; post {}
+		for循环的三个组成部分两边不用小括号，大括号是必须的。init可省，循环开始之前执行，post也可以省略，就是形式2
+		
+		形式2 : for post {}
+		类似传统的 while循环
+		
+		形式3 ；for {}
+		这种是无限的循环，需要通过break或者是return来终止
+		
+		形式4 : 迭代循环 -->在字符串或者是slice数据上迭代，类型 foreach迭代
+		for key : value := rang os.Args[1:] {
+			fmt.Println(key + value)
+		}
+		如果不需要key可以不要
+		for _ : value := rang os.Args[1:] {}
+		
+		迭代你从命令行输入的参数
+	·string.Join(os.Args[1:]," ") --> 以空串分割输出的命令行参数
+	·maps := make(map[string]int)
+		内置的make函数可以用来新建map，该map的键是string类型，值是int类型
+		使用for迭代可以对map进行遍历，例如
+		for key : value := range maps {}
+		
+	·使用bufio包 ，可以高效地处理输入和输出
+		input := bufio.NewScanner(os.Stdin)
+		每一次调用 input.Scan()读取下一行，函数返回的类型是 bool
+		调用input.Text()可以获取输入的结果
+		
+	·fmt.Printf() 格式化格式化输出
+		%d : 十进制
+		%x,%o,%b : 十六，八，二进制
+		%f,%g,%e : 浮点数
+		%t : 布尔型
+		%c : 字符型
+		%s : 字符串
+		%v ：内置格式的任何值
+	
+	·maps := make(map[string]int)
+		当maps作为实参传递给别人的时候，形参的改变会改变实参的值，传递的是引用
+		
+	·goroutine是一个并发执行的函数 --> go + 函数名。 
+	·通道是一种可以在一个协程向另一个协程传递指定类型值的通信机制  --> ch := make(chan string)
+	·if 语句在使用前可以进行初始化一次（这样会很方便，比如一个局部变量的声明）
+		if init; condition {}
+		eg: if err := r.read(); err != nil {}
+	
+	·对于switch只会执行其中的一条，从上到下优先，没有适合的执行default
+	·使用&操作符可以获取一个变量的地址，使用*操作符可以获取指针引用的变量的值，但是指针不支持算术运算	
