@@ -1,0 +1,163 @@
+第四章：复合数据类型
+	·数组初始化
+		var q [3]int = [3]int{1,2,3} //定义长度
+		var r [3]int = [3]int{1,2}  //未赋值的为零值
+		a := [...]int{1,2,3,4}  //长度由元素的长度决定
+		b := [...]int{99:-1} //长度为100，最后一个元素的值是-1
+		//长度也是数组的一部分，长度不同的数组，不能相互赋值
+	·当数组传入一个函数时，会拷贝一份，在函数内的修改是不会影响 实参的 func M_01(a [4]int)  //[4]int 数组的个数一定要与传入的个数一致
+		如果想在函数内改变实参的值，那么就传递指针就行 func M_01(a *[4]int) //传递指针
+		
+	·slice
+		数组和slice是紧密关联的，slice可以访问底层数组的部分或全部元素。
+		三个属性：指针，长度，容量
+			·指针指向数组的第一个可以从slice中访问的元素
+			·长度是指slice中的元素个数
+			·容量是slice第一个元素到底层数组的最后一个元素
+			内置函数len和cap返回slice的长度和容量
+			
+		·一个底层数组可以对应多个slice，这些slice可以引用数组的任意位置
+		·slice是一个指针，将一个slice传递给函数的时候，可以在函数内修改底层的数组元素
+		·slice[:]表示整个数组
+		·slice的引用超过了被引用数组的容量是会报错的，如果是超过了len会变长
+		·与数组不同，slice无法做比较，不能用 == ，要自己实现Equal方法
+		·slice类型的零值是nil，表示没有底层数组，len和cap都是0。
+			但是不为nil的slice，len和cap也可能是0，例如 []int{},make([]int,3)[3:]
+			所以判断一个slice是否为空，使用 if len(slice) == 0{}，而不是 slice == nil，因为不等于nil的时候也可能是空
+		·make([]T,len,cap)
+			:创建指定类型，大小，容量的slice。eg:
+			slice := make([]int,len) //make创建了一个无名底层数组(没有提供原始引用)并返回了它的一个slice，
+								   //这个数组仅可以通过这个slice来访问。这行代码返回的slice引用了整个数组
+			slice := make([]int,len,cap) //这行代码引用了底层数组的前len个元素，这为未来的slice元素留出空间
+			
+		·append(slice, data) ： 将data追加到slice的后面
+			var slice []int
+			slice = append(slice, 1)
+			slice = append(slice, 2)
+			fmt.Println(slice) //输出[1,2]
+			
+	·map 
+		初始化：
+		方式1：maps := make(map[string]int) //创建一个map，键的类型是string 值的类型是int
+		方式2：maps := map[string]int {}
+			注意: var maps map[string]int //这样并不能进行初始化，还不能给maps添加元素
+			
+		添加元素：
+			maps["jack"] = 23
+			
+		移除元素：
+			delete(maps,"jack")
+		
+		访问元素：
+			age := maps["jack"]  //注意访问没有的键返回零值
+			判断一个元素是否在map中：
+				age,ok := maps["jack"] //假如元素不存在 返回的是false
+				
+	
+	·结构体
+		·创建结构体方式 type Point struct {X,Y int}
+		p1 := Point{1,2}
+		p2 = new(Point) //p2是指针类型，因为new()返回的是指针
+		
+		·可作为map的键，eg:
+			type address struct {
+				hostname string
+				port int
+			}
+			
+			hits := make(map[address]int) 
+			fmt.Println(hits) //输出是：map[{1 2}:1]
+			
+			
+	·结构体是可以比较的
+		两个结构体比较可以使用 == 或者是 != 进行比较，会按照结构体定义成员变量的顺序进行一一比较
+	
+	·结构体嵌套和匿名成员
+		·Go允许我们创建不带名称的结构体成员，只需要指定类型就可以了，这种结构体成员称为匿名成员。eg:
+		·嵌套结构体的创建
+			//点
+			type Point struct {
+				X,Y int  //圆心的坐标
+			}
+			//圆
+			type Circle struct {
+				Point //这就是匿名成员，只有结构体的类型，没有像其他变量一样有名称
+				R int //圆的半径
+			}
+			func main()  {
+				//嵌套结构体的创建
+				//方式一
+				var a Circle
+				a.X = 1  //直接访问匿名嵌套结构体的成员
+				a.Y = 2
+				a.R = 3
+				//方式二
+				var b Circle
+				b.Point.X = 1 //点 匿名结构体类型 再点 匿名结构体的成员
+				b.Point.Y = 2
+				b.R = 3
+				//方式三
+				c := Circle{Point{1,2},3}
+				fmt.Printf("%#v\n",c)//可以把成员变量的名字也打印出来
+				//方式四
+				c := Circle{
+					Point:Point{
+						X: 1,
+						Y: 2,
+					},
+					R: 3,
+				}
+			}
+	
+	·json
+		
+		·marshal
+			把Go的数据结构转换为json称为marshal，marshal是通过json.Marshal来实现的 
+		·data,err := json.Marshal(arr) //arr是go的数据类型，结构体或者slice，数组，map等等。返回的data是json数据格式
+		·json.MarshalIndent(arr,""," ") //格式化输出，更便以阅读
+		·marshal使用Go结构体成员的名称作为json对象里面的字段名称(通过反射实现的)，只有可导出对象才可以被转换为json，所以在定义结构体字段时要全部都是大写
+			否则就转换不了json对象
+		
+		·结构体转换为json的一些设置
+			type Movie struct {
+				Title string
+				Year int `json:"released"`   //在json中的字段名是 released
+				Color bool `json:"color,omitempty"`   //在json中的字段名是color，并且 omitempty表示如果该值是空值或者是零值，该字段就不会被转换为json
+				Actors []string
+			}
+			
+		·unmarshal
+			将json转换为结构体 称为unmarshal。可以自定义结构体，选择对那部分进行转换
+		·json字段转换到结构体是 忽略大小写的
+		·eg:		
+		type Movie struct {
+			Title string
+			Year int `json:"momo"`
+			//ccc是别名，在转换为json时，该字段名是ccc，omitempty表示零值时不转换为json
+			Color bool `json:"ccc,omitempty"`
+			Actors []string
+		}
+		func main()  {
+			as := []Movie{
+				{
+					Title:"111",
+					Year: 1234,
+					Color:false,
+					Actors:[]string{"A","B"},
+				},{
+					Title:"222",
+					Year: 1234,
+					Color:false,
+					Actors:[]string{"A","B"},
+				},
+			}
+			d1, _ := json.Marshal(as)
+			//格式1
+			var t []struct{Title string} //只提取标题到数组t
+			json.Unmarshal(d1,&t)
+			//格式2	
+			var t2 []Movie //提取所有内容到数组t2
+			json.Unmarshal(d1,&t2)
+		}
+		
+		·注意，首字母必须要大写，转换为json的时候字段名称就不是首字母大写了
