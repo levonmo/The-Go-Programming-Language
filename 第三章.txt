@@ -1,0 +1,52 @@
+第三章：基本数据
+	·Go的数据类型分四大类: 基本类型，聚合类型，引用类型，接口类型
+		·基本类型：数字，字符串，布尔
+		·聚合类型：数组，结构体
+		·引用类型：指针，map，函数，通道
+		·接口类型：见第七章
+		
+	·字符串
+		·内置的len(str)，返回的是str的字节数（而不是字符的个数）
+		·字符串是不可变的，所以不允许修改，eg:
+			s := "hello,world"
+			s[0] = 'w' //编译错误
+			s1 := s[0,5] //并没有开辟新的内存
+			
+		·转义: 
+			\n：换行符  \r：回车  \'：单引号  \"：双引号 
+		·工具类:
+			strings: 提供搜索，替换，比较，修整，切分和连接字符串
+			bytes：bytes.Buffer类型与StringBuffer类似
+			strconv: 类型转换，将不是字符类型的转换为字符类型，将字符类型转换为其他类型
+			unicode: 提供识别单个字符是不是大小写（IsUpper，IsLower），将小写转换为大写 eg: 'a'转为'A'
+	
+		·字符串可以和字节slice相互转换
+			s := "abc"
+			b := []byte(s)
+			s2 := string(b)
+	
+		·字符串和数字的相互转换
+			
+			int -> string
+			
+			方式1: 
+			str := strconv.Itoa(123) //可以将int类型转换为string类型
+			方式2：
+			str := strconv.FormatInt(int64(123),10)  //第二个参数进制
+		
+			string -> int
+			方式1：
+			x,err := strconv.Atoi("123")
+			方式二：
+			x,_ := strconv.ParseInt("123",10,64) //第二个参数是十进制，第三个参数是最长64位
+	
+	·常量生成器 iota ： 从零开始 ，依次加一
+		const (
+			a = iota 
+			b		
+			c
+			d
+		)
+		func main()  {
+			fmt.Println(a,b,c,d)  //输出0，1，2，3
+		}
